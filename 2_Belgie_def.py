@@ -5,6 +5,11 @@ import io
 from zipfile import ZipFile
 import pdfplumber
 
+def clean_csv(file):
+    lines = file.getvalue().decode('utf-8').splitlines()
+    cleaned_lines = [line.strip().strip('"') for line in lines]
+    return "\n".join(cleaned_lines)
+    
 def process_files(main_file, reference_file, invoice_files, start_date, end_date):
     # Load and process the main file
     data = pd.read_csv(main_file)
@@ -13,7 +18,8 @@ def process_files(main_file, reference_file, invoice_files, start_date, end_date
     data['SKU'] = data['SKU'].str.replace(r"(-\d+|[A-Z])$", "", regex=True)
 
     # Load and merge reference data
-    check = pd.read_csv(reference_file)
+    reference_file_content = clean_csv(reference_file)
+    check = pd.read_csv(io.StringIO(reference_file_content))
     data = pd.merge(data, check[['SKU', 'Alcohol Percentage', 'Excise code']], on='SKU', how='left')
 
     # Data cleaning and filling missing values
